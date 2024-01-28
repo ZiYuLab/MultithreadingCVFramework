@@ -40,7 +40,7 @@ void MulThrCV::modelInput(MulThrCV *thisPtr)
     thisPtr->_sharedMutex.unlock();
 }
 
-void MulThrCV::modelOperation(MulThrCV *thisPtr)
+void MulThrCV::modelOperation(MulThrCV *thisPtr, unsigned int ID)
 {
     while (thisPtr->_threadStatus)
     {
@@ -49,6 +49,13 @@ void MulThrCV::modelOperation(MulThrCV *thisPtr)
         thisPtr->_inputMutex.lock();
         if (!thisPtr->_inputQueue.empty())
         {
+            if (ID)
+            {
+                thisPtr->_operationIDMutex.lock();
+                thisPtr->_operationIDQueue.push(ID);
+                thisPtr->_operationIDMutex.unlock();
+            }
+
             img = thisPtr->_inputQueue.front();
             thisPtr->_inputQueue.pop();
             thisPtr->_inputMutex.unlock();
@@ -73,19 +80,43 @@ void MulThrCV::modelOperation(MulThrCV *thisPtr)
             break;
         }
 
-        thisPtr->_outputMutex.lock();
-        const int tmp = thisPtr->_outputQueue.size() - thisPtr->_maxOutputQueue;
-        for (int i = 0; tmp >= 0 && i < tmp; ++i)
+        if (ID)
         {
-            thisPtr->_outputQueue.front().reset();
-            thisPtr->_outputQueue.pop();
+            while (true)
+            {
+                thisPtr->_operationIDMutex.lock();
+                if (thisPtr->_operationIDQueue.front() == ID)
+                {
+                    thisPtr->_operationIDQueue.pop();
+                    thisPtr->_outputMutex.lock();
+                    const int tmp = thisPtr->_outputQueue.size() - thisPtr->_maxOutputQueue;
+                    for (int i = 0; tmp >= 0 && i < tmp; ++i)
+                    {
+                        thisPtr->_outputQueue.front().reset();
+                        thisPtr->_outputQueue.pop();
+                    }
+                    thisPtr->_outputQueue.push(output);
+                    thisPtr->_outputMutex.unlock();
+                    thisPtr->_operationIDMutex.unlock();
+                    break;
+                }
+                thisPtr->_operationIDMutex.unlock();
+            }
+
         }
-        thisPtr->_outputQueue.push(output);
-        thisPtr->_outputMutex.unlock();
+
     }
 
     thisPtr->_sharedMutex.lock();
-    LOG_INFO("Operation Thread Stopped!");
+    if (ID)
+    {
+        LOG_INFO("Operation Thread:" << ID << " Stopped!");
+    }
+    else
+    {
+        LOG_INFO("Operation Thread Stopped!");
+    }
+
     thisPtr->_sharedMutex.unlock();
 }
 
@@ -173,13 +204,14 @@ bool MulThrCV::generateInputThread(int inputThreadNum)
     return true;
 }
 
-bool MulThrCV::generateOperationThread()
+bool MulThrCV::generateOperationThread(bool earlyInEarlyOut)
 {
-    return generateOperationThread(_operationThreadNum);
+    return generateOperationThread(_operationThreadNum, earlyInEarlyOut);
 }
 
-bool MulThrCV::generateOperationThread(int operationThreadNum)
+bool MulThrCV::generateOperationThread(int operationThreadNum, bool earlyInEarlyOut)
 {
+    unsigned int ID = 0;
     _operationThreadNum = operationThreadNum;
     if (_operationThreadNum <= 0)
     {
@@ -201,7 +233,11 @@ bool MulThrCV::generateOperationThread(int operationThreadNum)
         _operationThread.clear();
         for (int i = 0; i < operationThreadNum; ++i)
         {
-            std::shared_ptr<std::thread> thread(new std::thread(modelOperation, this));
+            if (earlyInEarlyOut)
+            {
+                ID = ++_operationIDNow;
+            }
+            std::shared_ptr<std::thread> thread(new std::thread(modelOperation, this, ID));
             _operationThread.emplace_back(thread);
         }
     }

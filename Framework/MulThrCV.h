@@ -66,12 +66,18 @@ private:
     int _outputThreadNum = 0;
     int _maxInputQueue = 0;
     int _maxOutputQueue = 0;
+    unsigned int _operationIDNow = 0;
 
+    std::queue<unsigned int> _operationIDQueue;
+    std::queue<cv::Mat> _inputQueue;
     std::queue<std::shared_ptr<void>> _outputQueue;
+
+    std::mutex _operationIDMutex;
     std::mutex _inputMutex;
     std::mutex _sharedMutex;
     std::mutex _outputMutex;
 
+    bool _threadStatus = true;
     bool _threadStop = false;
 
     std::vector<std::shared_ptr<std::thread>> _inputThread;
@@ -79,13 +85,12 @@ private:
     std::vector<std::shared_ptr<std::thread>> _outputThread;
 
     static void modelInput(MulThrCV * thisPtr);
-    static void modelOperation(MulThrCV * thisPtr);
+    static void modelOperation(MulThrCV * thisPtr, unsigned int ID);
     static void modelOutput(MulThrCV * thisPtr);
     Framework * _object = nullptr;
 
 public:
-    std::queue<cv::Mat> _inputQueue;
-    bool _threadStatus = true;
+
 
     MulThrCV() = default;
 
@@ -121,16 +126,18 @@ public:
 
     /**
      * 创建执行线程
+     * @param earlyInEarlyOut 先入先出模式，防止出现后取图像的线程先输出，默认打开，建议打开
      * @return
      */
-    bool generateOperationThread();
+    bool generateOperationThread(bool earlyInEarlyOut = true);
 
     /**
      * 创建执行线程,可以追加创建
      * @param operationThreadNum 执行线程数量，可以修改
+     * @param earlyInEarlyOut 先入先出模式，防止出现后取图像的线程先输出，默认打开，建议打开
      * @return
      */
-    bool generateOperationThread(int operationThreadNum);
+    bool generateOperationThread(int operationThreadNum, bool earlyInEarlyOut = true);
 
     /**
      * 创建输出线程 不能追加创建，程序中只能有一个！

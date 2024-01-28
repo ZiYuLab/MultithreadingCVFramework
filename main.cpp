@@ -21,7 +21,7 @@ int main()
     if (cap.isOpened())
     {
         TestClass testClass(cap);
-        MulThrCV mulThrCv(testClass, 50, 50, 5);
+        MulThrCV mulThrCv(testClass, 10, 10, 5);
         mulThrCv.generateInputThread();
         mulThrCv.generateOperationThread();
         mulThrCv.generateOutputThread();
