@@ -10,9 +10,8 @@
 #include <thread>
 #include <memory>
 #include <vector>
-#include <opencv2/opencv.hpp>
-
 #include "Framework.h"
+#include <opencv2/opencv.hpp>
 
 #define DEBUG
 
@@ -67,12 +66,12 @@ private:
     int _outputThreadNum = 0;
     int _maxInputQueue = 0;
     int _maxOutputQueue = 0;
-    std::queue<cv::Mat> _inputQueue;
+
     std::queue<std::shared_ptr<void>> _outputQueue;
     std::mutex _inputMutex;
     std::mutex _sharedMutex;
     std::mutex _outputMutex;
-    bool _threadStatus = true;
+
     bool _threadStop = false;
 
     std::vector<std::shared_ptr<std::thread>> _inputThread;
@@ -85,6 +84,9 @@ private:
     Framework * _object = nullptr;
 
 public:
+    std::queue<cv::Mat> _inputQueue;
+    bool _threadStatus = true;
+
     MulThrCV() = default;
 
     /**
@@ -161,6 +163,8 @@ public:
     ~MulThrCV();
 
 };
+
+
 
 
 #endif //MULTITHREADINGCVFRAMEWORK_MULTHRCV_H

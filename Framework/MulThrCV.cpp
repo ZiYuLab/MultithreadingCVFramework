@@ -4,6 +4,7 @@
 
 #include "MulThrCV.h"
 
+
 void MulThrCV::modelInput(MulThrCV *thisPtr)
 {
     while (thisPtr->_threadStatus)
@@ -284,3 +285,4 @@ bool MulThrCV::threadIsStop()
 {
     return !_threadStatus;
 }
+

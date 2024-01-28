@@ -12,10 +12,33 @@
 /**
  * 注意
  * 使用框架需继承该类并重写以下三个函数
- * 继承派生类下列三个重写函数其所调用的函数不允许写入该派生类变量，只允许读取 ！！！
+ * 继承派生类下列三个重写函数其所调用的函数，读取类变量时，清使用以下宏函数,或者手工加互斥锁 ！！！
  */
 
+#define INPUT_MUTEX (x) { \
+    inputMutex.lock()     \
+    X;                    \
+    inputMutex.unlock()\
+}
+
+#define OUTPUT_MUTEX (x) { \
+    outputMutex.lock()     \
+    X;                    \
+    outputMutex.unlock()\
+}
+
+#define SHARE_MUTEX (x) { \
+    shareMutex.lock()     \
+    X;                    \
+    shareMutex.unlock()\
+}
+
 class Framework {
+private:
+    std::mutex inputMutex_;
+    std::mutex outputMutex_;
+    std::mutex shareMutex_;
+
 public:
     Framework() = default;
 
@@ -45,3 +68,4 @@ public:
 
 
 #endif //MULTITHREADINGCVFRAMEWORK_FRAMEWORK_H
+
