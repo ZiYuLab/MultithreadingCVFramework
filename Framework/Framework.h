@@ -12,7 +12,7 @@
 /**
  * 注意
  * 使用框架需继承该类并重写以下三个函数
- * 继承派生类下列三个重写函数其所调用的函数，读取类变量时，清使用以下宏函数,或者手工加互斥锁 ！！！
+ * 继承派生类下列三个重写函数其所调用的函数，读取类变量时，父类提供互斥量，请手工加互斥锁 ！！！
  */
 
 #define INPUT_MUTEX (x) { \
@@ -34,7 +34,8 @@
 }
 
 class Framework {
-private:
+
+protected:
     std::mutex inputMutex_;
     std::mutex outputMutex_;
     std::mutex shareMutex_;
