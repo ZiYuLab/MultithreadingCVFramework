@@ -304,6 +304,7 @@ void MulThrCV::stopAllThread()
         }
 
     }
+    _operationIDNow = 0;
     _threadStop = true;
 }
 
